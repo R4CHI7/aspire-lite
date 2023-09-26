@@ -8,4 +8,5 @@ import (
 
 type UserService interface {
 	Create(context.Context, contract.User) (contract.UserResponse, error)
+	Login(context.Context, contract.UserLogin) (contract.UserResponse, error)
 }

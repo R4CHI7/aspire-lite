@@ -23,6 +23,23 @@ func (user *User) Bind(r *http.Request) error {
 	return nil
 }
 
+type UserLogin struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (user *UserLogin) Bind(r *http.Request) error {
+	if user.Email == "" {
+		return errors.New("email is required")
+	}
+
+	if user.Password == "" {
+		return errors.New("password is required")
+	}
+
+	return nil
+}
+
 type UserResponse struct {
 	ID    uint   `json:"id"`
 	Token string `json:"token"`

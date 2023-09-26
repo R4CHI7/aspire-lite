@@ -15,3 +15,8 @@ func (mock *MockUserService) Create(ctx context.Context, input contract.User) (c
 	args := mock.Called(ctx, input)
 	return args.Get(0).(contract.UserResponse), args.Error(1)
 }
+
+func (mock *MockUserService) Login(ctx context.Context, input contract.UserLogin) (contract.UserResponse, error) {
+	args := mock.Called(ctx, input)
+	return args.Get(0).(contract.UserResponse), args.Error(1)
+}
