@@ -3,6 +3,7 @@ package contract
 import (
 	"errors"
 	"net/http"
+	"time"
 )
 
 type Loan struct {
@@ -27,5 +28,6 @@ type LoanResponse struct {
 	Amount     float64                 `json:"amount"`
 	Term       int                     `json:"term"`
 	Status     string                  `json:"status"`
+	CreatedAt  time.Time               `json:"created_at"`
 	Repayments []LoanRepaymentResponse `json:"repayments"`
 }

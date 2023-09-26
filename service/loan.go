@@ -61,8 +61,39 @@ func (loan Loan) Create(ctx context.Context, userID uint, input contract.Loan) (
 		Amount:     loanObj.Amount,
 		Term:       loanObj.Term,
 		Status:     loanObj.Status.String(),
+		CreatedAt:  loanObj.CreatedAt,
 		Repayments: repaymentResp,
 	}, nil
+}
+
+func (loan Loan) GetByUser(ctx context.Context, userID uint) ([]contract.LoanResponse, error) {
+	loans, err := loan.loanRepository.GetByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make([]contract.LoanResponse, 0)
+	for _, l := range loans {
+		repaymentResp := make([]contract.LoanRepaymentResponse, 0)
+		for _, repayment := range l.Repayments {
+			repaymentResp = append(repaymentResp, contract.LoanRepaymentResponse{
+				Amount:  repayment.Amount,
+				DueDate: time.Time(repayment.DueDate).Format(time.DateOnly),
+				Status:  repayment.Status.String(),
+			})
+		}
+
+		resp = append(resp, contract.LoanResponse{
+			ID:         l.ID,
+			Amount:     l.Amount,
+			Term:       l.Term,
+			Status:     l.Status.String(),
+			CreatedAt:  l.CreatedAt,
+			Repayments: repaymentResp,
+		})
+	}
+
+	return resp, nil
 }
 
 func NewLoan(loanRepository LoanRepository, loanRepaymentRepository LoanRepaymentRepository) Loan {

@@ -30,6 +30,11 @@ func (mock *MockLoanRepository) Create(ctx context.Context, loan model.Loan) (mo
 	return args.Get(0).(model.Loan), args.Error(1)
 }
 
+func (mock *MockLoanRepository) GetByUser(ctx context.Context, userID uint) ([]model.Loan, error) {
+	args := mock.Called(ctx, userID)
+	return args.Get(0).([]model.Loan), args.Error(1)
+}
+
 type MockLoanRepaymentRepository struct {
 	mock.Mock
 }

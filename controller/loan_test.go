@@ -58,7 +58,7 @@ func (suite *LoanTestSuite) TestCreateHappyFlow() {
 		suite.Error(errors.New("expected error to be nil got"), err)
 	}
 	suite.Equal(http.StatusCreated, res.StatusCode)
-	suite.Equal(`{"id":1,"amount":10000,"term":3,"status":"PENDING","repayments":[{"amount":5000,"due_date":"2023-10-01","status":"PENDING"},{"amount":5000,"due_date":"2023-10-08","status":"PENDING"}]}
+	suite.Equal(`{"id":1,"amount":10000,"term":3,"status":"PENDING","created_at":"0001-01-01T00:00:00Z","repayments":[{"amount":5000,"due_date":"2023-10-01","status":"PENDING"},{"amount":5000,"due_date":"2023-10-08","status":"PENDING"}]}
 `, string(body))
 	suite.mockService.AssertExpectations(suite.T())
 }
@@ -106,7 +106,7 @@ func (suite *LoanTestSuite) TestGetHappyFlow() {
 	req := httptest.NewRequest(http.MethodGet, "/users/loans", strings.NewReader(`{"amount":10000}`)).WithContext(suite.ctx)
 	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	suite.mockService.On("GetByUser", req.Context(), uint(1)).Return(contract.LoanResponse{
+	suite.mockService.On("GetByUser", req.Context(), uint(1)).Return([]contract.LoanResponse{{
 		ID: 1, Amount: 10000, Term: 3, Status: model.StatusPending.String(), Repayments: []contract.LoanRepaymentResponse{
 			{
 				Amount:  5000,
@@ -117,7 +117,7 @@ func (suite *LoanTestSuite) TestGetHappyFlow() {
 				DueDate: "2023-10-08",
 				Status:  model.StatusPending.String(),
 			},
-		}}, nil)
+		}}}, nil)
 
 	suite.controller.Get(w, req)
 
@@ -128,7 +128,7 @@ func (suite *LoanTestSuite) TestGetHappyFlow() {
 		suite.Error(errors.New("expected error to be nil got"), err)
 	}
 	suite.Equal(http.StatusOK, res.StatusCode)
-	suite.Equal(`{"id":1,"amount":10000,"term":3,"status":"PENDING","repayments":[{"amount":5000,"due_date":"2023-10-01","status":"PENDING"},{"amount":5000,"due_date":"2023-10-08","status":"PENDING"}]}
+	suite.Equal(`[{"id":1,"amount":10000,"term":3,"status":"PENDING","created_at":"0001-01-01T00:00:00Z","repayments":[{"amount":5000,"due_date":"2023-10-01","status":"PENDING"},{"amount":5000,"due_date":"2023-10-08","status":"PENDING"}]}]
 `, string(body))
 	suite.mockService.AssertExpectations(suite.T())
 }
@@ -137,7 +137,7 @@ func (suite *LoanTestSuite) TestGetShouldReturnErrorWhenServiceReturnsError() {
 	req := httptest.NewRequest(http.MethodGet, "/users/loans", strings.NewReader(`{"amount":10000}`)).WithContext(suite.ctx)
 	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	suite.mockService.On("GetByUser", req.Context(), uint(1)).Return(contract.LoanResponse{}, errors.New("some error"))
+	suite.mockService.On("GetByUser", req.Context(), uint(1)).Return([]contract.LoanResponse{}, errors.New("some error"))
 
 	suite.controller.Get(w, req)
 

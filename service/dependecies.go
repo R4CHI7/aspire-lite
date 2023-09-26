@@ -13,6 +13,7 @@ type UserRepository interface {
 
 type LoanRepository interface {
 	Create(context.Context, model.Loan) (model.Loan, error)
+	GetByUser(context.Context, uint) ([]model.Loan, error)
 }
 
 type LoanRepaymentRepository interface {

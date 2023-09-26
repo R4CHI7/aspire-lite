@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/r4chi7/aspire-lite/contract"
 	"github.com/r4chi7/aspire-lite/model"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/datatypes"
 )
 
 type LoanTestSuite struct {
@@ -96,6 +98,71 @@ func (suite *LoanTestSuite) TestCreateShouldReturnErrorWhenLoanRepaymentReposito
 	}).Return(model.Loan{}, errors.New("some error"))
 
 	resp, err := suite.service.Create(suite.ctx, uint(1), input)
+	suite.Equal("some error", err.Error())
+	suite.Empty(resp)
+}
+
+func (suite *LoanTestSuite) TestGetByUserHappyFlow() {
+	now := time.Now()
+	suite.mockLoanRepository.On("GetByUser", suite.ctx, uint(1)).Return([]model.Loan{
+		{
+			ID:        1,
+			UserID:    1,
+			Amount:    10000,
+			Term:      2,
+			Status:    model.StatusPending,
+			CreatedAt: now,
+			Repayments: []model.LoanRepayment{
+				{
+					ID:      1,
+					LoanID:  1,
+					Amount:  5000,
+					DueDate: datatypes.Date(now),
+					Status:  model.StatusPending,
+				},
+				{
+					ID:      2,
+					LoanID:  1,
+					Amount:  5000,
+					DueDate: datatypes.Date(now),
+					Status:  model.StatusPending,
+				},
+			},
+		}, {
+			ID:        2,
+			UserID:    1,
+			Amount:    12000,
+			Term:      2,
+			Status:    model.StatusApproved,
+			CreatedAt: now,
+			Repayments: []model.LoanRepayment{
+				{
+					ID:      3,
+					LoanID:  2,
+					Amount:  6000,
+					DueDate: datatypes.Date(now),
+					Status:  model.StatusPending,
+				},
+				{
+					ID:      4,
+					LoanID:  2,
+					Amount:  6000,
+					DueDate: datatypes.Date(now),
+					Status:  model.StatusPending,
+				},
+			},
+		},
+	}, nil)
+
+	resp, err := suite.service.GetByUser(suite.ctx, uint(1))
+	suite.Nil(err)
+	suite.Equal(2, len(resp))
+}
+
+func (suite *LoanTestSuite) TestGetByUserShouldReturnErrorIfRepositoryFails() {
+	suite.mockLoanRepository.On("GetByUser", suite.ctx, uint(1)).Return([]model.Loan{}, errors.New("some error"))
+
+	resp, err := suite.service.GetByUser(suite.ctx, uint(1))
 	suite.Equal("some error", err.Error())
 	suite.Empty(resp)
 }

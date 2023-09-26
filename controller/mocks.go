@@ -30,7 +30,7 @@ func (mock *MockLoanService) Create(ctx context.Context, userID uint, input cont
 	return args.Get(0).(contract.LoanResponse), args.Error(1)
 }
 
-func (mock *MockLoanService) GetByUser(ctx context.Context, userID uint) (contract.LoanResponse, error) {
+func (mock *MockLoanService) GetByUser(ctx context.Context, userID uint) ([]contract.LoanResponse, error) {
 	args := mock.Called(ctx, userID)
-	return args.Get(0).(contract.LoanResponse), args.Error(1)
+	return args.Get(0).([]contract.LoanResponse), args.Error(1)
 }
