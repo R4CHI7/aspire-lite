@@ -37,6 +37,7 @@ func Init() *chi.Mux {
 			r.Use(jwtauth.Authenticator)
 
 			r.Post("/", loanController.Create)
+			r.Get("/", loanController.Get)
 		})
 	})
 
