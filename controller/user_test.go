@@ -21,7 +21,6 @@ type UserTestSuite struct {
 func (suite *UserTestSuite) SetupTest() {
 	suite.mockService = &MockUserService{}
 	suite.controller = NewUser(suite.mockService)
-
 }
 
 func (suite *UserTestSuite) TestCreateHappyFlow() {
@@ -78,7 +77,7 @@ func (suite *UserTestSuite) TestCreateShouldReturnServerErrorWhenServiceReturnsE
 		suite.Error(errors.New("expected error to be nil got"), err)
 	}
 	suite.Equal(http.StatusInternalServerError, res.StatusCode)
-	suite.Equal(`{"status_text":"internal server error","message":"some error"}
+	suite.Equal(`{"status_text":"internal server error","message":"something went wrong, please try again later.."}
 `, string(body)) // This newline is needed because chi returns the response ending with a \n
 	suite.mockService.AssertExpectations(suite.T())
 }
@@ -137,7 +136,7 @@ func (suite *UserTestSuite) TestLoginShouldReturnServerErrorWhenServiceReturnsEr
 		suite.Error(errors.New("expected error to be nil got"), err)
 	}
 	suite.Equal(http.StatusInternalServerError, res.StatusCode)
-	suite.Equal(`{"status_text":"internal server error","message":"some error"}
+	suite.Equal(`{"status_text":"internal server error","message":"something went wrong, please try again later.."}
 `, string(body)) // This newline is needed because chi returns the response ending with a \n
 	suite.mockService.AssertExpectations(suite.T())
 }
