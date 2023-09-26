@@ -39,6 +39,24 @@ func (loan Loan) Create(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, resp)
 }
 
+func (loan Loan) Get(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	_, claims, err := jwtauth.FromContext(ctx)
+	if err != nil {
+		render.Render(w, r, contract.ServerErrorRenderer(err))
+		return
+	}
+
+	resp, err := loan.service.GetByUser(ctx, uint(claims["user_id"].(float64)))
+	if err != nil {
+		render.Render(w, r, contract.ServerErrorRenderer(err))
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, resp)
+}
+
 func NewLoan(service LoanService) Loan {
 	return Loan{service: service}
 }

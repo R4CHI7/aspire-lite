@@ -102,6 +102,57 @@ func (suite *LoanTestSuite) TestCreateShouldReturnServerErrorWhenServiceReturnsE
 	suite.mockService.AssertExpectations(suite.T())
 }
 
+func (suite *LoanTestSuite) TestGetHappyFlow() {
+	req := httptest.NewRequest(http.MethodGet, "/users/loans", strings.NewReader(`{"amount":10000}`)).WithContext(suite.ctx)
+	req.Header.Add("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	suite.mockService.On("GetByUser", req.Context(), uint(1)).Return(contract.LoanResponse{
+		ID: 1, Amount: 10000, Term: 3, Status: model.StatusPending.String(), Repayments: []contract.LoanRepaymentResponse{
+			{
+				Amount:  5000,
+				DueDate: "2023-10-01",
+				Status:  model.StatusPending.String(),
+			}, {
+				Amount:  5000,
+				DueDate: "2023-10-08",
+				Status:  model.StatusPending.String(),
+			},
+		}}, nil)
+
+	suite.controller.Get(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		suite.Error(errors.New("expected error to be nil got"), err)
+	}
+	suite.Equal(http.StatusOK, res.StatusCode)
+	suite.Equal(`{"id":1,"amount":10000,"term":3,"status":"PENDING","repayments":[{"amount":5000,"due_date":"2023-10-01","status":"PENDING"},{"amount":5000,"due_date":"2023-10-08","status":"PENDING"}]}
+`, string(body))
+	suite.mockService.AssertExpectations(suite.T())
+}
+
+func (suite *LoanTestSuite) TestGetShouldReturnErrorWhenServiceReturnsError() {
+	req := httptest.NewRequest(http.MethodGet, "/users/loans", strings.NewReader(`{"amount":10000}`)).WithContext(suite.ctx)
+	req.Header.Add("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	suite.mockService.On("GetByUser", req.Context(), uint(1)).Return(contract.LoanResponse{}, errors.New("some error"))
+
+	suite.controller.Get(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		suite.Error(errors.New("expected error to be nil got"), err)
+	}
+	suite.Equal(http.StatusInternalServerError, res.StatusCode)
+	suite.Equal(`{"status_text":"internal server error","message":"something went wrong, please try again later.."}
+`, string(body))
+	suite.mockService.AssertExpectations(suite.T())
+}
+
 func getToken(claims map[string]interface{}) jwt.Token {
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
 	token, _, err := tokenAuth.Encode(claims)
