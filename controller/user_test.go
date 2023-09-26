@@ -28,7 +28,7 @@ func (suite *UserTestSuite) TestCreateHappyFlow() {
 	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"email":"test@example.xyz","password":"password"}`))
 	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	suite.mockService.On("Create", req.Context(), contract.User{Email: "test@example.xyz", Password: "password"}).Return(contract.UserResponse{ID: 1}, nil)
+	suite.mockService.On("Create", req.Context(), contract.User{Email: "test@example.xyz", Password: "password"}).Return(contract.UserResponse{ID: 1, Token: "token"}, nil)
 
 	suite.controller.Create(w, req)
 
@@ -39,7 +39,7 @@ func (suite *UserTestSuite) TestCreateHappyFlow() {
 		suite.Error(errors.New("expected error to be nil got"), err)
 	}
 	suite.Equal(http.StatusCreated, res.StatusCode)
-	suite.Equal(`{"id":1}
+	suite.Equal(`{"id":1,"token":"token"}
 `, string(body))
 	suite.mockService.AssertExpectations(suite.T())
 }

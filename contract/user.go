@@ -24,5 +24,6 @@ func (user *User) Bind(r *http.Request) error {
 }
 
 type UserResponse struct {
-	ID uint `json:"id"`
+	ID    uint   `json:"id"`
+	Token string `json:"token"`
 }
