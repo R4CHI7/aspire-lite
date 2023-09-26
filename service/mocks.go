@@ -20,3 +20,21 @@ func (mock *MockUserRepository) GetByEmail(ctx context.Context, email string) (m
 	args := mock.Called(ctx, email)
 	return args.Get(0).(model.User), args.Error(1)
 }
+
+type MockLoanRepository struct {
+	mock.Mock
+}
+
+func (mock *MockLoanRepository) Create(ctx context.Context, loan model.Loan) (model.Loan, error) {
+	args := mock.Called(ctx, loan)
+	return args.Get(0).(model.Loan), args.Error(1)
+}
+
+type MockLoanRepaymentRepository struct {
+	mock.Mock
+}
+
+func (mock *MockLoanRepaymentRepository) Create(ctx context.Context, repayments []model.LoanRepayment) error {
+	args := mock.Called(ctx, repayments)
+	return args.Error(0)
+}
