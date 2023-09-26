@@ -167,6 +167,22 @@ func (suite *LoanTestSuite) TestGetByUserShouldReturnErrorIfRepositoryFails() {
 	suite.Empty(resp)
 }
 
+func (suite *LoanTestSuite) TestUpdateStatusHappyFlow() {
+	suite.mockLoanRepository.On("UpdateStatus", suite.ctx, uint(1), model.StatusApproved).Return(nil)
+
+	err := suite.service.UpdateStatus(suite.ctx, contract.LoanStatusUpdate{LoanID: uint(1), Status: model.StatusApproved})
+	suite.Nil(err)
+	suite.mockLoanRepository.AssertExpectations(suite.T())
+}
+
+func (suite *LoanTestSuite) TestUpdateStatusReturnsErrorWhenRepositoryReturnsError() {
+	suite.mockLoanRepository.On("UpdateStatus", suite.ctx, uint(1), model.StatusApproved).Return(errors.New("some error"))
+
+	err := suite.service.UpdateStatus(suite.ctx, contract.LoanStatusUpdate{LoanID: uint(1), Status: model.StatusApproved})
+	suite.Equal("some error", err.Error())
+	suite.mockLoanRepository.AssertExpectations(suite.T())
+}
+
 func TestLoanTestSuite(t *testing.T) {
 	suite.Run(t, new(LoanTestSuite))
 }

@@ -96,6 +96,11 @@ func (loan Loan) GetByUser(ctx context.Context, userID uint) ([]contract.LoanRes
 	return resp, nil
 }
 
+func (loan Loan) UpdateStatus(ctx context.Context, input contract.LoanStatusUpdate) error {
+	return loan.loanRepository.UpdateStatus(ctx, input.LoanID, input.Status)
+
+}
+
 func NewLoan(loanRepository LoanRepository, loanRepaymentRepository LoanRepaymentRepository) Loan {
 	return Loan{loanRepository: loanRepository, loanRepaymentRepository: loanRepaymentRepository}
 }
