@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/jwtauth/v5"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/r4chi7/aspire-lite/contract"
 	"github.com/r4chi7/aspire-lite/model"
 	"github.com/stretchr/testify/suite"
@@ -17,18 +20,23 @@ type LoanTestSuite struct {
 	suite.Suite
 	controller  Loan
 	mockService *MockLoanService
+	ctx         context.Context
 }
 
 func (suite *LoanTestSuite) SetupTest() {
 	suite.mockService = &MockLoanService{}
 	suite.controller = NewLoan(suite.mockService)
+	token := getToken(map[string]interface{}{
+		"user_id": 1.0,
+	})
+	suite.ctx = jwtauth.NewContext(context.Background(), token, nil)
 }
 
 func (suite *LoanTestSuite) TestCreateHappyFlow() {
-	req := httptest.NewRequest(http.MethodPost, "/users/loans", strings.NewReader(`{"amount":10000,"term":2}`))
+	req := httptest.NewRequest(http.MethodPost, "/users/loans", strings.NewReader(`{"amount":10000,"term":2}`)).WithContext(suite.ctx)
 	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	suite.mockService.On("Create", req.Context(), contract.Loan{Amount: 10000, Term: 2}).Return(contract.LoanResponse{
+	suite.mockService.On("Create", req.Context(), uint(1), contract.Loan{Amount: 10000, Term: 2}).Return(contract.LoanResponse{
 		ID: 1, Amount: 10000, Term: 3, Status: model.StatusPending.String(), Repayments: []contract.LoanRepaymentResponse{
 			{
 				Amount:  5000,
@@ -56,7 +64,7 @@ func (suite *LoanTestSuite) TestCreateHappyFlow() {
 }
 
 func (suite *LoanTestSuite) TestCreateShouldReturnBadRequestWhenRequestBodyIsIncomplete() {
-	req := httptest.NewRequest(http.MethodPost, "/users/loans", strings.NewReader(`{"amount":10000}`))
+	req := httptest.NewRequest(http.MethodPost, "/users/loans", strings.NewReader(`{"amount":10000}`)).WithContext(suite.ctx)
 	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -75,10 +83,10 @@ func (suite *LoanTestSuite) TestCreateShouldReturnBadRequestWhenRequestBodyIsInc
 }
 
 func (suite *LoanTestSuite) TestCreateShouldReturnServerErrorWhenServiceReturnsError() {
-	req := httptest.NewRequest(http.MethodPost, "/users/loans", strings.NewReader(`{"amount":10000,"term":3}`))
+	req := httptest.NewRequest(http.MethodPost, "/users/loans", strings.NewReader(`{"amount":10000,"term":3}`)).WithContext(suite.ctx)
 	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	suite.mockService.On("Create", req.Context(), contract.Loan{Amount: 10000, Term: 3}).Return(contract.LoanResponse{}, errors.New("some error"))
+	suite.mockService.On("Create", req.Context(), uint(1), contract.Loan{Amount: 10000, Term: 3}).Return(contract.LoanResponse{}, errors.New("some error"))
 
 	suite.controller.Create(w, req)
 
@@ -92,6 +100,15 @@ func (suite *LoanTestSuite) TestCreateShouldReturnServerErrorWhenServiceReturnsE
 	suite.Equal(`{"status_text":"internal server error","message":"something went wrong, please try again later.."}
 `, string(body)) // This newline is needed because chi returns the response ending with a \n
 	suite.mockService.AssertExpectations(suite.T())
+}
+
+func getToken(claims map[string]interface{}) jwt.Token {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	token, _, err := tokenAuth.Encode(claims)
+	if err != nil {
+		panic(err)
+	}
+	return token
 }
 
 func TestLoanTestSuite(t *testing.T) {

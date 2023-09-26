@@ -2,11 +2,9 @@ package service
 
 import (
 	"context"
-	"log"
 	"math"
 	"time"
 
-	"github.com/go-chi/jwtauth/v5"
 	"github.com/r4chi7/aspire-lite/contract"
 	"github.com/r4chi7/aspire-lite/model"
 	"gorm.io/datatypes"
@@ -17,21 +15,15 @@ type Loan struct {
 	loanRepaymentRepository LoanRepaymentRepository
 }
 
-func (loan Loan) Create(ctx context.Context, input contract.Loan) (contract.LoanResponse, error) {
-	_, claims, err := jwtauth.FromContext(ctx)
-	if err != nil {
-		log.Printf("could not get claims from context: %s", err.Error())
-		return contract.LoanResponse{}, err
-	}
-
+func (loan Loan) Create(ctx context.Context, userID uint, input contract.Loan) (contract.LoanResponse, error) {
 	// Create Loan
 	loanObj := model.Loan{
-		UserID: uint(claims["user_id"].(float64)),
+		UserID: userID,
 		Amount: input.Amount,
 		Term:   input.Term,
 		Status: model.StatusPending,
 	}
-	loanObj, err = loan.loanRepository.Create(ctx, loanObj)
+	loanObj, err := loan.loanRepository.Create(ctx, loanObj)
 	if err != nil {
 		return contract.LoanResponse{}, err
 	}

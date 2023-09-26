@@ -12,5 +12,6 @@ type UserService interface {
 }
 
 type LoanService interface {
-	Create(context.Context, contract.Loan) (contract.LoanResponse, error)
+	Create(context.Context, uint, contract.Loan) (contract.LoanResponse, error)
+	GetByUser(context.Context, uint) (contract.LoanResponse, error)
 }

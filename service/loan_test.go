@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-chi/jwtauth/v5"
-	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/r4chi7/aspire-lite/contract"
 	"github.com/r4chi7/aspire-lite/model"
 	"github.com/stretchr/testify/mock"
@@ -25,11 +23,7 @@ func (suite *LoanTestSuite) SetupTest() {
 	suite.mockLoanRepository = &MockLoanRepository{}
 	suite.mockLoanRepaymentRepository = &MockLoanRepaymentRepository{}
 	suite.service = NewLoan(suite.mockLoanRepository, suite.mockLoanRepaymentRepository)
-
-	token := getToken(map[string]interface{}{
-		"user_id": 1.0,
-	})
-	suite.ctx = jwtauth.NewContext(context.Background(), token, nil)
+	suite.ctx = context.Background()
 }
 
 func (suite *LoanTestSuite) TestCreateHappyFlow() {
@@ -55,7 +49,7 @@ func (suite *LoanTestSuite) TestCreateHappyFlow() {
 
 	suite.mockLoanRepaymentRepository.On("Create", suite.ctx, mock.Anything).Return(nil)
 
-	resp, err := suite.service.Create(suite.ctx, input)
+	resp, err := suite.service.Create(suite.ctx, uint(1), input)
 	suite.Nil(err)
 	suite.Equal(uint(1), resp.ID)
 }
@@ -83,7 +77,7 @@ func (suite *LoanTestSuite) TestCreateShouldReturnErrorWhenLoanRepositoryFails()
 
 	suite.mockLoanRepaymentRepository.On("Create", suite.ctx, mock.Anything).Return(errors.New("some error"))
 
-	resp, err := suite.service.Create(suite.ctx, input)
+	resp, err := suite.service.Create(suite.ctx, uint(1), input)
 	suite.Equal("some error", err.Error())
 	suite.Empty(resp)
 }
@@ -101,18 +95,9 @@ func (suite *LoanTestSuite) TestCreateShouldReturnErrorWhenLoanRepaymentReposito
 		Status: model.StatusPending,
 	}).Return(model.Loan{}, errors.New("some error"))
 
-	resp, err := suite.service.Create(suite.ctx, input)
+	resp, err := suite.service.Create(suite.ctx, uint(1), input)
 	suite.Equal("some error", err.Error())
 	suite.Empty(resp)
-}
-
-func getToken(claims map[string]interface{}) jwt.Token {
-	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-	token, _, err := tokenAuth.Encode(claims)
-	if err != nil {
-		panic(err)
-	}
-	return token
 }
 
 func TestLoanTestSuite(t *testing.T) {
