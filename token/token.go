@@ -26,3 +26,7 @@ func Generate(claims map[string]interface{}) string {
 
 	return token
 }
+
+func GetTokenAuth() *jwtauth.JWTAuth {
+	return tokenAuth
+}

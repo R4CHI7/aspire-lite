@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"log"
+	"math"
 	"time"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -25,7 +26,7 @@ func (loan Loan) Create(ctx context.Context, input contract.Loan) (contract.Loan
 
 	// Create Loan
 	loanObj := model.Loan{
-		UserID: claims["user_id"].(uint),
+		UserID: uint(claims["user_id"].(float64)),
 		Amount: input.Amount,
 		Term:   input.Term,
 		Status: model.StatusPending,
@@ -43,7 +44,7 @@ func (loan Loan) Create(ctx context.Context, input contract.Loan) (contract.Loan
 		dueDate := today.Add(time.Hour * time.Duration(24*i))
 		repayments = append(repayments, model.LoanRepayment{
 			LoanID:  loanObj.ID,
-			Amount:  repaymentAmount,
+			Amount:  math.Round(repaymentAmount*100) / 100,
 			Status:  model.StatusPending,
 			DueDate: datatypes.Date(dueDate),
 		})
