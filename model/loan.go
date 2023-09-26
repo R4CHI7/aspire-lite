@@ -2,15 +2,15 @@ package model
 
 import "time"
 
-type status int
+type Status int
 
 const (
-	StatusPending  status = 0
-	StatusApproved status = 1
-	StatusPaid     status = 2
+	StatusPending  Status = 0
+	StatusApproved Status = 1
+	StatusPaid     Status = 2
 )
 
-func (s status) String() string {
+func (s Status) String() string {
 	switch s {
 	case StatusPending:
 		return "PENDING"
@@ -27,7 +27,7 @@ type Loan struct {
 	UserID    uint      `gorm:"not null"`
 	Amount    float64   `gorm:"not null"`
 	Term      int       `gorm:"not null"`
-	Status    status    `gorm:"not null"`
+	Status    Status    `gorm:"not null"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 

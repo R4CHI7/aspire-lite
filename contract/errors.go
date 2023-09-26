@@ -53,3 +53,12 @@ func UnauthorizedErrorRenderer(err error) *ErrorResponse {
 		Message:    "you are unauthorized to perform this action",
 	}
 }
+
+func ForbiddenErrorRenderer(err error) *ErrorResponse {
+	return &ErrorResponse{
+		Err:        err,
+		StatusCode: 403,
+		StatusText: "forbidden",
+		Message:    "you are forbidden to perform this action",
+	}
+}

@@ -34,3 +34,8 @@ func (mock *MockLoanService) GetByUser(ctx context.Context, userID uint) ([]cont
 	args := mock.Called(ctx, userID)
 	return args.Get(0).([]contract.LoanResponse), args.Error(1)
 }
+
+func (mock *MockLoanService) UpdateStatus(ctx context.Context, input contract.LoanStatusUpdate) error {
+	args := mock.Called(ctx, input)
+	return args.Error(0)
+}
