@@ -17,6 +17,7 @@ func Init() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
 	db := database.Get()
 	userRepository := repository.NewUser(db)
@@ -25,10 +26,9 @@ func Init() *chi.Mux {
 
 	userController := controller.NewUser(service.NewUser(userRepository))
 	loanController := controller.NewLoan(service.NewLoan(loanRepository, loanRepaymentRepository))
+	adminController := controller.NewAdmin(service.NewLoan(loanRepository, loanRepaymentRepository))
 
 	r.Route("/users", func(r chi.Router) {
-		r.Use(middleware.Recoverer)
-
 		r.Post("/", userController.Create)
 		r.Post("/login", userController.Login)
 
@@ -39,6 +39,12 @@ func Init() *chi.Mux {
 			r.Post("/", loanController.Create)
 			r.Get("/", loanController.Get)
 		})
+	})
+
+	r.Route("/admin", func(r chi.Router) {
+		r.Use(jwtauth.Verifier(token.GetTokenAuth()))
+		r.Use(jwtauth.Authenticator)
+		r.Patch("/loan/status", adminController.UpdateLoanStatus)
 	})
 
 	return r

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"log"
 
 	"github.com/r4chi7/aspire-lite/model"
@@ -31,6 +32,22 @@ func (loan Loan) GetByUser(ctx context.Context, userID uint) ([]model.Loan, erro
 	}
 
 	return loans, nil
+}
+
+func (loan Loan) UpdateStatus(ctx context.Context, loanID uint, status model.Status) error {
+	loanObj := model.Loan{ID: loanID}
+	res := loan.db.Model(&loanObj).Update("status", status)
+	if res.Error != nil {
+		log.Printf("error occurred while updating loan status: %s", res.Error.Error())
+		return res.Error
+	}
+
+	if res.RowsAffected == 0 {
+		log.Printf("loan not found with ID: %d", loanID)
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
 
 func NewLoan(db *gorm.DB) Loan {

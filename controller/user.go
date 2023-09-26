@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 
@@ -48,7 +49,7 @@ func (user User) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			render.Render(w, r, contract.NotFoundErrorRenderer(err))
+			render.Render(w, r, contract.NotFoundErrorRenderer(errors.New("user not found")))
 			return
 		case bcrypt.ErrMismatchedHashAndPassword:
 			render.Render(w, r, contract.UnauthorizedErrorRenderer(err))

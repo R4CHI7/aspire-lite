@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"database/sql"
 	"errors"
 	"log"
 	"net/http"
@@ -39,6 +40,10 @@ func (admin Admin) UpdateLoanStatus(w http.ResponseWriter, r *http.Request) {
 
 	err = admin.service.UpdateStatus(ctx, input)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			render.Render(w, r, contract.NotFoundErrorRenderer(errors.New("loan does not exist")))
+			return
+		}
 		render.Render(w, r, contract.ErrorRenderer(err))
 		return
 	}

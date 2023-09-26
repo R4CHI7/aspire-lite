@@ -32,7 +32,7 @@ func NotFoundErrorRenderer(err error) *ErrorResponse {
 		Err:        err,
 		StatusCode: 404,
 		StatusText: "not found",
-		Message:    "not found",
+		Message:    err.Error(),
 	}
 }
 
