@@ -9,4 +9,6 @@ type User struct {
 	IsAdmin   bool      `gorm:"default:false"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+
+	Loans []Loan
 }
