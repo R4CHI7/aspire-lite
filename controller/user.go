@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/render"
 	"github.com/r4chi7/aspire-lite/contract"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -44,6 +46,14 @@ func (user User) Login(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := user.service.Login(ctx, input)
 	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			render.Render(w, r, contract.NotFoundErrorRenderer(err))
+			return
+		case bcrypt.ErrMismatchedHashAndPassword:
+			render.Render(w, r, contract.UnauthorizedErrorRenderer(err))
+			return
+		}
 		render.Render(w, r, contract.ServerErrorRenderer(err))
 		return
 	}

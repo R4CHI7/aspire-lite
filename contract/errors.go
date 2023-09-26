@@ -49,3 +49,12 @@ func ServerErrorRenderer(err error) *ErrorResponse {
 		Message:    err.Error(),
 	}
 }
+
+func UnauthorizedErrorRenderer(err error) *ErrorResponse {
+	return &ErrorResponse{
+		Err:        err,
+		StatusCode: 401,
+		StatusText: "unauthorized",
+		Message:    err.Error(),
+	}
+}

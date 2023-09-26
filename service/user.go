@@ -37,6 +37,26 @@ func (user User) Create(ctx context.Context, input contract.User) (contract.User
 	return contract.UserResponse{ID: userObj.ID, Token: authToken}, nil
 }
 
+func (user User) Login(ctx context.Context, input contract.UserLogin) (contract.UserResponse, error) {
+	userObj, err := user.repository.GetByEmail(ctx, input.Email)
+	if err != nil {
+		return contract.UserResponse{}, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(userObj.Password), []byte(input.Password))
+	if err != nil {
+		return contract.UserResponse{}, err
+	}
+
+	authToken := token.Generate(map[string]interface{}{
+		"user_id":  userObj.ID,
+		"is_admin": userObj.IsAdmin,
+	})
+
+	return contract.UserResponse{ID: userObj.ID, Token: authToken}, nil
+
+}
+
 func NewUser(repo UserRepository) User {
 	return User{repository: repo}
 }

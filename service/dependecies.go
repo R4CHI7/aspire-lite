@@ -8,4 +8,5 @@ import (
 
 type UserRepository interface {
 	Create(context.Context, model.User) (model.User, error)
+	GetByEmail(context.Context, string) (model.User, error)
 }
