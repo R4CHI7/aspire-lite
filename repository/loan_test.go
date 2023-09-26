@@ -5,10 +5,12 @@ import (
 	"errors"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/r4chi7/aspire-lite/model"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/datatypes"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -62,6 +64,37 @@ func (suite *LoanTestSuite) TestCreateReturnsErrorWhenDBFails() {
 
 	suite.Empty(resp)
 	suite.Error(err, "some error")
+	suite.NoError(suite.mock.ExpectationsWereMet())
+}
+
+func (suite *LoanTestSuite) TestGetByUserHappyFlow() {
+	suite.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "loans" WHERE user_id = $1`)).
+		WithArgs(1).
+		WillReturnRows(
+			sqlmock.NewRows([]string{"id", "user_id", "amount", "term", "status", "created_at"}).AddRow(1, 1, 10000, 2, 0, time.Now()))
+
+	suite.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "loan_repayments" WHERE "loan_repayments"."loan_id" = $1`)).
+		WithArgs(1).
+		WillReturnRows(
+			sqlmock.NewRows([]string{"id", "loan_id", "amount", "due_date", "status", "created_at"}).
+				AddRow(1, 1, 10000, datatypes.Date(time.Now()), 0, time.Now()).
+				AddRow(1, 1, 10000, datatypes.Date(time.Now()), 0, time.Now()))
+
+	resp, err := suite.repo.GetByUser(context.Background(), 1)
+	suite.NoError(err)
+	suite.Equal(1, len(resp))
+	suite.Equal(2, len(resp[0].Repayments))
+	suite.NoError(suite.mock.ExpectationsWereMet())
+}
+
+func (suite *LoanTestSuite) TestGetByUserShouldReturnErrorIfDBFails() {
+	suite.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "loans" WHERE user_id = $1`)).
+		WithArgs(1).
+		WillReturnError(errors.New("some error"))
+
+	resp, err := suite.repo.GetByUser(context.Background(), 1)
+	suite.Equal("some error", err.Error())
+	suite.Empty(resp)
 	suite.NoError(suite.mock.ExpectationsWereMet())
 }
 

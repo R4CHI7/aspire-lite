@@ -66,7 +66,6 @@ func (suite *UserTestSuite) TestCreateReturnsErrorWhenDBFails() {
 }
 
 func (suite *UserTestSuite) TestGetByEmailReturnsDataIfExists() {
-	// user := model.User{}
 	suite.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE email = $1`)).
 		WithArgs("test@example.xyz").WillReturnRows(sqlmock.NewRows([]string{"id", "email", "password", "is_admin"}).
 		AddRow(1, "test@example.xyz", "password", false))
