@@ -41,7 +41,7 @@ func (loan Loan) Create(ctx context.Context, input contract.Loan) (contract.Loan
 	repaymentAmount := input.Amount / float64(input.Term)
 	today := time.Now()
 	for i := 1; i <= input.Term; i++ {
-		dueDate := today.Add(time.Hour * time.Duration(24*i))
+		dueDate := today.Add(time.Hour * time.Duration(24*7*i))
 		repayments = append(repayments, model.LoanRepayment{
 			LoanID:  loanObj.ID,
 			Amount:  math.Round(repaymentAmount*100) / 100,
