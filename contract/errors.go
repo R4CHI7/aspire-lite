@@ -13,11 +13,6 @@ type ErrorResponse struct {
 	Message    string `json:"message"`
 }
 
-var (
-	ErrNotFound   = &ErrorResponse{StatusCode: 404, Message: "not found"}
-	ErrBadRequest = &ErrorResponse{StatusCode: 400, Message: "bad request"}
-)
-
 func (e *ErrorResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	render.Status(r, e.StatusCode)
 	return nil
@@ -37,7 +32,7 @@ func NotFoundErrorRenderer(err error) *ErrorResponse {
 		Err:        err,
 		StatusCode: 404,
 		StatusText: "not found",
-		Message:    err.Error(),
+		Message:    "not found",
 	}
 }
 
@@ -46,7 +41,7 @@ func ServerErrorRenderer(err error) *ErrorResponse {
 		Err:        err,
 		StatusCode: 500,
 		StatusText: "internal server error",
-		Message:    err.Error(),
+		Message:    "something went wrong, please try again later..",
 	}
 }
 
@@ -55,6 +50,6 @@ func UnauthorizedErrorRenderer(err error) *ErrorResponse {
 		Err:        err,
 		StatusCode: 401,
 		StatusText: "unauthorized",
-		Message:    err.Error(),
+		Message:    "you are unauthorized to perform this action",
 	}
 }

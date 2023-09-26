@@ -23,6 +23,7 @@ func Init() *chi.Mux {
 
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", userController.Create)
+		r.Post("/login", userController.Login)
 	})
 
 	return r

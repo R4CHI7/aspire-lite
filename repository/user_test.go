@@ -65,6 +65,27 @@ func (suite *UserTestSuite) TestCreateReturnsErrorWhenDBFails() {
 	suite.NoError(suite.mock.ExpectationsWereMet())
 }
 
+func (suite *UserTestSuite) TestGetByEmailReturnsDataIfExists() {
+	// user := model.User{}
+	suite.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE email = $1`)).
+		WithArgs("test@example.xyz").WillReturnRows(sqlmock.NewRows([]string{"id", "email", "password", "is_admin"}).
+		AddRow(1, "test@example.xyz", "password", false))
+
+	resp, err := suite.repo.GetByEmail(context.Background(), "test@example.xyz")
+	suite.NoError(err)
+	suite.Equal(1, int(resp.ID))
+	suite.Equal("test@example.xyz", resp.Email)
+}
+
+func (suite *UserTestSuite) TestGetByEmailReturnsErrorIfDBReturnsError() {
+	suite.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE email = $1`)).
+		WithArgs("test@example.xyz").WillReturnError(errors.New("some error"))
+
+	resp, err := suite.repo.GetByEmail(context.Background(), "test@example.xyz")
+	suite.Equal("some error", err.Error())
+	suite.Empty(resp)
+}
+
 func TestUserTestSuite(t *testing.T) {
 	suite.Run(t, new(UserTestSuite))
 }
