@@ -30,4 +30,6 @@ type Loan struct {
 	Status    status    `gorm:"not null"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+
+	Repayments []LoanRepayment
 }
