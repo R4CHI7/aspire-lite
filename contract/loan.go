@@ -23,7 +23,9 @@ func (loan *Loan) Bind(r *http.Request) error {
 }
 
 type LoanResponse struct {
-	ID     uint    `json:"id"`
-	Amount float64 `json:"amount"`
-	Term   int     `json:"term"`
+	ID         uint                    `json:"id"`
+	Amount     float64                 `json:"amount"`
+	Term       int                     `json:"term"`
+	Status     string                  `json:"status"`
+	Repayments []LoanRepaymentResponse `json:"repayments"`
 }

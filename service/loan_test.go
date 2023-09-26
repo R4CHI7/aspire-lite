@@ -27,7 +27,7 @@ func (suite *LoanTestSuite) SetupTest() {
 	suite.service = NewLoan(suite.mockLoanRepository, suite.mockLoanRepaymentRepository)
 
 	token := getToken(map[string]interface{}{
-		"user_id": uint(1),
+		"user_id": 1.0,
 	})
 	suite.ctx = jwtauth.NewContext(context.Background(), token, nil)
 }

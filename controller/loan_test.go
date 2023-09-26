@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/r4chi7/aspire-lite/contract"
+	"github.com/r4chi7/aspire-lite/model"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,10 +25,21 @@ func (suite *LoanTestSuite) SetupTest() {
 }
 
 func (suite *LoanTestSuite) TestCreateHappyFlow() {
-	req := httptest.NewRequest(http.MethodPost, "/users/loans", strings.NewReader(`{"amount":10000,"term":3}`))
+	req := httptest.NewRequest(http.MethodPost, "/users/loans", strings.NewReader(`{"amount":10000,"term":2}`))
 	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	suite.mockService.On("Create", req.Context(), contract.Loan{Amount: 10000, Term: 3}).Return(contract.LoanResponse{ID: 1, Amount: 10000, Term: 3}, nil)
+	suite.mockService.On("Create", req.Context(), contract.Loan{Amount: 10000, Term: 2}).Return(contract.LoanResponse{
+		ID: 1, Amount: 10000, Term: 3, Status: model.StatusPending.String(), Repayments: []contract.LoanRepaymentResponse{
+			{
+				Amount:  5000,
+				DueDate: "2023-10-01",
+				Status:  model.StatusPending.String(),
+			}, {
+				Amount:  5000,
+				DueDate: "2023-10-08",
+				Status:  model.StatusPending.String(),
+			},
+		}}, nil)
 
 	suite.controller.Create(w, req)
 
@@ -38,7 +50,7 @@ func (suite *LoanTestSuite) TestCreateHappyFlow() {
 		suite.Error(errors.New("expected error to be nil got"), err)
 	}
 	suite.Equal(http.StatusCreated, res.StatusCode)
-	suite.Equal(`{"id":1,"amount":10000,"term":3}
+	suite.Equal(`{"id":1,"amount":10000,"term":3,"status":"PENDING","repayments":[{"amount":5000,"due_date":"2023-10-01","status":"PENDING"},{"amount":5000,"due_date":"2023-10-08","status":"PENDING"}]}
 `, string(body))
 	suite.mockService.AssertExpectations(suite.T())
 }

@@ -55,10 +55,21 @@ func (loan Loan) Create(ctx context.Context, input contract.Loan) (contract.Loan
 		return contract.LoanResponse{}, err
 	}
 
+	repaymentResp := make([]contract.LoanRepaymentResponse, 0)
+	for _, repayment := range repayments {
+		repaymentResp = append(repaymentResp, contract.LoanRepaymentResponse{
+			Amount:  repayment.Amount,
+			DueDate: time.Time(repayment.DueDate).Format(time.DateOnly),
+			Status:  repayment.Status.String(),
+		})
+	}
+
 	return contract.LoanResponse{
-		ID:     loanObj.ID,
-		Amount: loanObj.Amount,
-		Term:   loanObj.Term,
+		ID:         loanObj.ID,
+		Amount:     loanObj.Amount,
+		Term:       loanObj.Term,
+		Status:     loanObj.Status.String(),
+		Repayments: repaymentResp,
 	}, nil
 }
 
