@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 
+	"github.com/r4chi7/aspire-lite/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -24,7 +25,7 @@ func Init(username, password, database string) {
 		panic(err)
 	}
 
-	err = db.AutoMigrate()
+	err = db.AutoMigrate(&model.User{})
 	if err != nil {
 		panic(err)
 	}
