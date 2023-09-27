@@ -39,3 +39,8 @@ func (mock *MockLoanService) UpdateStatus(ctx context.Context, input contract.Lo
 	args := mock.Called(ctx, input)
 	return args.Error(0)
 }
+
+func (mock *MockLoanService) Repay(ctx context.Context, userID, loanID uint, input contract.LoanRepayment) error {
+	args := mock.Called(ctx, userID, loanID, input)
+	return args.Error(0)
+}

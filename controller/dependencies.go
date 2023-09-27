@@ -15,4 +15,5 @@ type LoanService interface {
 	Create(context.Context, uint, contract.Loan) (contract.LoanResponse, error)
 	GetByUser(context.Context, uint) ([]contract.LoanResponse, error)
 	UpdateStatus(context.Context, contract.LoanStatusUpdate) error
+	Repay(context.Context, uint, uint, contract.LoanRepayment) error
 }

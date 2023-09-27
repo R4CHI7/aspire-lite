@@ -9,10 +9,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/r4chi7/aspire-lite/contract"
 	"github.com/r4chi7/aspire-lite/model"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -103,7 +105,7 @@ func (suite *LoanTestSuite) TestCreateShouldReturnServerErrorWhenServiceReturnsE
 }
 
 func (suite *LoanTestSuite) TestGetHappyFlow() {
-	req := httptest.NewRequest(http.MethodGet, "/users/loans", strings.NewReader(`{"amount":10000}`)).WithContext(suite.ctx)
+	req := httptest.NewRequest(http.MethodGet, "/users/loans", nil).WithContext(suite.ctx)
 	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	suite.mockService.On("GetByUser", req.Context(), uint(1)).Return([]contract.LoanResponse{{
@@ -134,7 +136,7 @@ func (suite *LoanTestSuite) TestGetHappyFlow() {
 }
 
 func (suite *LoanTestSuite) TestGetShouldReturnErrorWhenServiceReturnsError() {
-	req := httptest.NewRequest(http.MethodGet, "/users/loans", strings.NewReader(`{"amount":10000}`)).WithContext(suite.ctx)
+	req := httptest.NewRequest(http.MethodGet, "/users/loans", nil).WithContext(suite.ctx)
 	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	suite.mockService.On("GetByUser", req.Context(), uint(1)).Return([]contract.LoanResponse{}, errors.New("some error"))
@@ -151,6 +153,73 @@ func (suite *LoanTestSuite) TestGetShouldReturnErrorWhenServiceReturnsError() {
 	suite.Equal(`{"status_text":"internal server error","message":"something went wrong, please try again later.."}
 `, string(body))
 	suite.mockService.AssertExpectations(suite.T())
+}
+
+func (suite *LoanTestSuite) TestRepayHappyFlow() {
+	req := httptest.NewRequest(http.MethodPost, "/users/loans/1/repay", strings.NewReader(`{"amount":5000}`)).WithContext(suite.ctx)
+	req.Header.Add("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", "1")
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	suite.mockService.On("Repay", mock.Anything, uint(1), uint(1), contract.LoanRepayment{Amount: 5000.0}).Return(nil)
+
+	suite.controller.Repay(w, req)
+
+	res := w.Result()
+	suite.Equal(http.StatusOK, res.StatusCode)
+	suite.mockService.AssertExpectations(suite.T())
+}
+
+func (suite *LoanTestSuite) TestRepayReturnsErrorWhenAmountIsZero() {
+	req := httptest.NewRequest(http.MethodPost, "/users/loans/1/repay", strings.NewReader(`{"amount":0}`)).WithContext(suite.ctx)
+	req.Header.Add("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", "1")
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	suite.controller.Repay(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		suite.Error(errors.New("expected error to be nil got"), err)
+	}
+	suite.Equal(http.StatusBadRequest, res.StatusCode)
+	suite.Equal(`{"status_text":"bad request","message":"amount should be greater than 0"}
+`, string(body))
+}
+
+func (suite *LoanTestSuite) TestRepayReturnsErrorWhenServiceReturnsZero() {
+	req := httptest.NewRequest(http.MethodPost, "/users/loans/1/repay", strings.NewReader(`{"amount":5000}`)).WithContext(suite.ctx)
+	req.Header.Add("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", "1")
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	suite.mockService.On("Repay", mock.Anything, uint(1), uint(1), contract.LoanRepayment{Amount: 5000.0}).Return(errors.New("some error"))
+
+	suite.controller.Repay(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		suite.Error(errors.New("expected error to be nil got"), err)
+	}
+	suite.Equal(http.StatusInternalServerError, res.StatusCode)
+	suite.Equal(`{"status_text":"internal server error","message":"something went wrong, please try again later.."}
+`, string(body))
 }
 
 func getToken(claims map[string]interface{}) jwt.Token {
