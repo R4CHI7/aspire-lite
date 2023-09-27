@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"regexp"
 	"testing"
@@ -98,17 +99,27 @@ func (suite *LoanTestSuite) TestGetByUserShouldReturnErrorIfDBFails() {
 	suite.NoError(suite.mock.ExpectationsWereMet())
 }
 
-// TODO: FIX ME
-// func (suite *LoanTestSuite) TestUpdateStatusHappyFlow() {
-// 	suite.mock.ExpectBegin()
-// 	suite.mock.ExpectQuery(regexp.QuoteMeta(`UPDATE "loans" SET "status"=$1,"updated_at"=$2 WHERE "id" = $3`)).
-// 		WithArgs(1, sqlmock.AnyArg(), 1)
-// 	suite.mock.ExpectCommit()
+func (suite *LoanTestSuite) TestUpdateStatusHappyFlow() {
+	suite.mock.ExpectBegin()
+	suite.mock.ExpectExec(regexp.QuoteMeta(`UPDATE "loans" SET "status"=$1,"updated_at"=$2 WHERE "id" = $3`)).
+		WithArgs(1, sqlmock.AnyArg(), 1).WillReturnResult(sqlmock.NewResult(0, 1))
+	suite.mock.ExpectCommit()
 
-// 	err := suite.repo.UpdateStatus(context.Background(), 1, 1)
-// 	suite.Nil(err)
-// 	suite.NoError(suite.mock.ExpectationsWereMet())
-// }
+	err := suite.repo.UpdateStatus(context.Background(), 1, 1)
+	suite.Nil(err)
+	suite.NoError(suite.mock.ExpectationsWereMet())
+}
+
+func (suite *LoanTestSuite) TestUpdateStatusReturnsNoRowsErrorIfNoRowsAffected() {
+	suite.mock.ExpectBegin()
+	suite.mock.ExpectExec(regexp.QuoteMeta(`UPDATE "loans" SET "status"=$1,"updated_at"=$2 WHERE "id" = $3`)).
+		WithArgs(1, sqlmock.AnyArg(), 1).WillReturnResult(sqlmock.NewResult(0, 0))
+	suite.mock.ExpectCommit()
+
+	err := suite.repo.UpdateStatus(context.Background(), 1, 1)
+	suite.Equal(sql.ErrNoRows, err)
+	suite.NoError(suite.mock.ExpectationsWereMet())
+}
 
 func TestLoanTestSuite(t *testing.T) {
 	suite.Run(t, new(LoanTestSuite))
