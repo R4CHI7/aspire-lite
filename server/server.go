@@ -38,6 +38,8 @@ func Init() *chi.Mux {
 
 			r.Post("/", loanController.Create)
 			r.Get("/", loanController.Get)
+
+			r.Post("/{loanID}/repay", loanController.Repay)
 		})
 	})
 

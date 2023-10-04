@@ -50,6 +50,17 @@ func (loan Loan) UpdateStatus(ctx context.Context, loanID uint, status model.Sta
 	return nil
 }
 
+func (loan Loan) GetByID(ctx context.Context, loanID uint) (model.Loan, error) {
+	obj := model.Loan{ID: loanID}
+	err := loan.db.Model(&model.Loan{}).Preload("Repayments").Find(&obj).Error
+	if err != nil {
+		log.Printf("error occurred while getting loan by ID: %s", err.Error())
+		return model.Loan{}, err
+	}
+
+	return obj, nil
+}
+
 func NewLoan(db *gorm.DB) Loan {
 	return Loan{db: db}
 }

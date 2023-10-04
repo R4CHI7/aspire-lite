@@ -121,6 +121,37 @@ func (suite *LoanTestSuite) TestUpdateStatusReturnsNoRowsErrorIfNoRowsAffected()
 	suite.NoError(suite.mock.ExpectationsWereMet())
 }
 
+func (suite *LoanTestSuite) TestGetByIDHappyFlow() {
+	suite.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "loans" WHERE "loans"."id" = $1`)).
+		WithArgs(1).
+		WillReturnRows(
+			sqlmock.NewRows([]string{"id", "user_id", "amount", "term", "status", "created_at"}).AddRow(1, 1, 10000, 2, 0, time.Now()))
+
+	suite.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "loan_repayments" WHERE "loan_repayments"."loan_id" = $1`)).
+		WithArgs(1).
+		WillReturnRows(
+			sqlmock.NewRows([]string{"id", "loan_id", "amount", "due_date", "status", "created_at"}).
+				AddRow(1, 1, 10000, datatypes.Date(time.Now()), 0, time.Now()).
+				AddRow(1, 1, 10000, datatypes.Date(time.Now()), 0, time.Now()))
+
+	resp, err := suite.repo.GetByID(context.Background(), 1)
+	suite.Nil(err)
+	suite.Equal(uint(1), resp.ID)
+	suite.Equal(2, len(resp.Repayments))
+	suite.NoError(suite.mock.ExpectationsWereMet())
+}
+
+func (suite *LoanTestSuite) TestGetByIDShouldReturnErrorIfDBFails() {
+	suite.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "loans" WHERE "loans"."id" = $1`)).
+		WithArgs(1).
+		WillReturnError(errors.New("some error"))
+
+	resp, err := suite.repo.GetByID(context.Background(), 1)
+	suite.Equal("some error", err.Error())
+	suite.Empty(resp)
+	suite.NoError(suite.mock.ExpectationsWereMet())
+}
+
 func TestLoanTestSuite(t *testing.T) {
 	suite.Run(t, new(LoanTestSuite))
 }
