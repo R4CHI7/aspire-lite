@@ -113,3 +113,116 @@ func (suite *IntegrationTestSuite) TestRepayHappyFlowEqualRepayments() {
 	suite.Equal(model.StatusPaid, loan.Repayments[0].Status)
 	suite.Equal(model.StatusPaid, loan.Repayments[1].Status)
 }
+
+func (suite *IntegrationTestSuite) TestRepayHappyFlowUnEqualRepayments() {
+	userID := suite.createUser("loanrepay1@example.com", "password", false)
+	token := suite.getToken(map[string]interface{}{"user_id": userID})
+	loanID := suite.createLoan(token, 10000.0, 2)
+	ctx := jwtauth.NewContext(context.Background(), token, nil)
+
+	suite.approveLoan(loanID)
+
+	// First repayment
+	req, err := http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":6000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", fmt.Sprintf("%d", int(loanID)))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(suite.loanController.Repay)
+
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusOK, rr.Code)
+
+	// Assert that the pending repayment's amount got updated
+	var loan model.Loan
+	suite.db.Preload("Repayments").Find(&loan, loanID)
+	for _, repay := range loan.Repayments {
+		switch repay.Status {
+		case model.StatusPending:
+			suite.Equal(4000.0, repay.Amount)
+		case model.StatusPaid:
+			suite.Equal(6000.0, repay.Amount)
+		}
+	}
+
+	// Second repayment
+	req, err = http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":4000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusOK, rr.Code)
+
+	suite.db.Preload("Repayments").Find(&loan, loanID)
+	suite.Equal(model.StatusPaid, loan.Status)
+	suite.Equal(model.StatusPaid, loan.Repayments[0].Status)
+	suite.Equal(model.StatusPaid, loan.Repayments[1].Status)
+}
+
+func (suite *IntegrationTestSuite) TestRepayDeletesPendingPaymentIfUserPaysOffLoanPrematurely() {
+	userID := suite.createUser("loanrepay2@example.com", "password", false)
+	token := suite.getToken(map[string]interface{}{"user_id": userID})
+	loanID := suite.createLoan(token, 10000.0, 3)
+	ctx := jwtauth.NewContext(context.Background(), token, nil)
+
+	suite.approveLoan(loanID)
+
+	// First repayment
+	req, err := http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":4000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", fmt.Sprintf("%d", int(loanID)))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(suite.loanController.Repay)
+
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusOK, rr.Code)
+
+	// Assert that the pending repayment's amount got updated
+	var loan model.Loan
+	suite.db.Preload("Repayments").Find(&loan, loanID)
+	suite.Equal(3, len(loan.Repayments))
+	for _, repay := range loan.Repayments {
+		switch repay.Status {
+		case model.StatusPending:
+			suite.Equal(3000.0, repay.Amount)
+		case model.StatusPaid:
+			suite.Equal(4000.0, repay.Amount)
+		}
+	}
+
+	// Second repayment
+	req, err = http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":6000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusOK, rr.Code)
+
+	// Assert that the pending repayment's amount got deleted
+	suite.db.Preload("Repayments").Find(&loan, loanID)
+	suite.Equal(2, len(loan.Repayments))
+	suite.Equal(model.StatusPaid, loan.Status)
+}
