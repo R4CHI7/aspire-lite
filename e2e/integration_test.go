@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -70,6 +71,33 @@ func (suite *IntegrationTestSuite) createUser(email, password string, isAdmin bo
 	var insertedUser model.User
 	suite.db.Where("email = ?", email).Find(&insertedUser)
 	suite.NotZero(insertedUser.ID)
+
+	return resp["id"].(float64)
+}
+
+func (suite *IntegrationTestSuite) createLoan(token jwt.Token, amount float64, term int) float64 {
+	ctx := jwtauth.NewContext(context.Background(), token, nil)
+	input := map[string]interface{}{
+		"amount": amount,
+		"term":   term,
+	}
+	reqBody, _ := json.Marshal(input)
+	req, err := http.NewRequest("POST", "/users/loans", bytes.NewBuffer(reqBody))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(suite.loanController.Create)
+
+	handler.ServeHTTP(rr, req)
+
+	suite.Equal(http.StatusCreated, rr.Code)
+
+	var resp map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &resp)
+	suite.Nil(err)
+	suite.NotEmpty(resp["id"])
 
 	return resp["id"].(float64)
 }
