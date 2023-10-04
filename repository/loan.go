@@ -52,10 +52,15 @@ func (loan Loan) UpdateStatus(ctx context.Context, loanID uint, status model.Sta
 
 func (loan Loan) GetByID(ctx context.Context, loanID uint) (model.Loan, error) {
 	obj := model.Loan{ID: loanID}
-	err := loan.db.Model(&model.Loan{}).Preload("Repayments").Find(&obj).Error
-	if err != nil {
-		log.Printf("error occurred while getting loan by ID: %s", err.Error())
-		return model.Loan{}, err
+	res := loan.db.Model(&model.Loan{}).Preload("Repayments").Find(&obj)
+	if res.Error != nil {
+		log.Printf("error occurred while getting loan by ID: %s", res.Error.Error())
+		return model.Loan{}, res.Error
+	}
+
+	if res.RowsAffected == 0 {
+		log.Printf("loan not found for id: %d", loanID)
+		return model.Loan{}, sql.ErrNoRows
 	}
 
 	return obj, nil

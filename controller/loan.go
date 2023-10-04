@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"database/sql"
 	"errors"
 	"log"
 	"net/http"
@@ -104,6 +105,9 @@ func (loan Loan) Repay(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.As(err, &contract.RepaymentError{}) {
 			render.Render(w, r, contract.ErrorRenderer(err))
+			return
+		} else if err == sql.ErrNoRows {
+			render.Render(w, r, contract.NotFoundErrorRenderer(errors.New("loan not found")))
 			return
 		}
 		render.Render(w, r, contract.ServerErrorRenderer(err))

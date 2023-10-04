@@ -324,3 +324,29 @@ func (suite *IntegrationTestSuite) TestLoanRepayShouldReturnBadRequestWhenLastRe
 	suite.Nil(err)
 	suite.Equal("amount should be 5000.00", resp["message"])
 }
+
+func (suite *IntegrationTestSuite) TestLoanRepayShouldReturnNotFoundIfLoanDoesNotExist() {
+	userID := suite.createUser("loanrepay6@example.com", "password", false)
+	token := suite.getToken(map[string]interface{}{"user_id": userID})
+	ctx := jwtauth.NewContext(context.Background(), token, nil)
+
+	req, err := http.NewRequest("POST", "/users/loans/100/repay", bytes.NewBuffer([]byte(`{"amount":4000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", "100")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(suite.loanController.Repay)
+
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusNotFound, rr.Code)
+	var resp map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &resp)
+	suite.Nil(err)
+	suite.Equal("loan not found", resp["message"])
+}
