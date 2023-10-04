@@ -183,6 +183,146 @@ func (suite *LoanTestSuite) TestUpdateStatusReturnsErrorWhenRepositoryReturnsErr
 	suite.mockLoanRepository.AssertExpectations(suite.T())
 }
 
+func (suite *LoanTestSuite) TestRepayHappyFlowLastRepayment() {
+	suite.mockLoanRepository.On("GetByID", suite.ctx, uint(1)).Return(model.Loan{
+		ID:     1,
+		UserID: 1,
+		Amount: 10000,
+		Term:   2,
+		Status: 1,
+		Repayments: []model.LoanRepayment{
+			{
+				ID:     1,
+				LoanID: 1,
+				Amount: 5000,
+				Status: 2,
+			},
+			{
+				ID:     2,
+				LoanID: 1,
+				Amount: 5000,
+				Status: 0,
+			},
+		},
+	}, nil)
+
+	suite.mockLoanRepaymentRepository.On("Update", suite.ctx, uint(2), map[string]interface{}{
+		"amount": 5000.0,
+		"status": model.StatusPaid,
+	}).Return(nil)
+
+	suite.mockLoanRepository.On("UpdateStatus", suite.ctx, uint(1), model.StatusPaid).Return(nil)
+
+	err := suite.service.Repay(suite.ctx, 1, 1, contract.LoanRepayment{Amount: 5000})
+	suite.Nil(err)
+	suite.mockLoanRepository.AssertExpectations(suite.T())
+	suite.mockLoanRepaymentRepository.AssertExpectations(suite.T())
+}
+
+func (suite *LoanTestSuite) TestRepayHappyFlowNotLastRepayment() {
+	suite.mockLoanRepository.On("GetByID", suite.ctx, uint(1)).Return(model.Loan{
+		ID:     1,
+		UserID: 1,
+		Amount: 10000,
+		Term:   2,
+		Status: 1,
+		Repayments: []model.LoanRepayment{
+			{
+				ID:     1,
+				LoanID: 1,
+				Amount: 5000,
+				Status: 0,
+			},
+			{
+				ID:     2,
+				LoanID: 1,
+				Amount: 5000,
+				Status: 0,
+			},
+		},
+	}, nil)
+
+	suite.mockLoanRepaymentRepository.On("Update", suite.ctx, uint(1), map[string]interface{}{
+		"amount": 6000.0,
+		"status": model.StatusPaid,
+	}).Return(nil)
+	suite.mockLoanRepaymentRepository.On("Update", suite.ctx, uint(2), map[string]interface{}{
+		"amount": 4000.0,
+	}).Return(nil)
+
+	err := suite.service.Repay(suite.ctx, 1, 1, contract.LoanRepayment{Amount: 6000})
+	suite.Nil(err)
+	suite.mockLoanRepository.AssertExpectations(suite.T())
+	suite.mockLoanRepaymentRepository.AssertExpectations(suite.T())
+}
+
+func (suite *LoanTestSuite) TestRepayReturnsErrorWhenLoanIsNotApproved() {
+	suite.mockLoanRepository.On("GetByID", suite.ctx, uint(1)).Return(model.Loan{
+		ID:     1,
+		UserID: 1,
+		Amount: 10000,
+		Term:   2,
+		Status: 0,
+		Repayments: []model.LoanRepayment{
+			{
+				ID:     1,
+				LoanID: 1,
+				Amount: 5000,
+				Status: 0,
+			},
+			{
+				ID:     2,
+				LoanID: 1,
+				Amount: 5000,
+				Status: 0,
+			},
+		},
+	}, nil)
+
+	err := suite.service.Repay(suite.ctx, 1, 1, contract.LoanRepayment{Amount: 6000})
+	suite.Equal("loan is not approved", err.Error())
+	suite.mockLoanRepository.AssertExpectations(suite.T())
+	suite.mockLoanRepaymentRepository.AssertExpectations(suite.T())
+}
+
+func (suite *LoanTestSuite) TestRepayReturnsErrorWhenUserAmountIsLessThanRequired() {
+	suite.mockLoanRepository.On("GetByID", suite.ctx, uint(1)).Return(model.Loan{
+		ID:     1,
+		UserID: 1,
+		Amount: 10000,
+		Term:   2,
+		Status: 1,
+		Repayments: []model.LoanRepayment{
+			{
+				ID:     1,
+				LoanID: 1,
+				Amount: 5000,
+				Status: 0,
+			},
+			{
+				ID:     2,
+				LoanID: 1,
+				Amount: 5000,
+				Status: 0,
+			},
+		},
+	}, nil)
+
+	err := suite.service.Repay(suite.ctx, 1, 1, contract.LoanRepayment{Amount: 4000})
+	suite.Equal("amount should be at least 5000.00", err.Error())
+	suite.mockLoanRepository.AssertExpectations(suite.T())
+	suite.mockLoanRepaymentRepository.AssertExpectations(suite.T())
+}
+
+func (suite *LoanTestSuite) TestRepayReturnsErrorWhenRepositoryReturnsError() {
+	suite.mockLoanRepository.On("GetByID", suite.ctx, uint(1)).Return(model.Loan{}, errors.New("some error"))
+
+	err := suite.service.Repay(suite.ctx, 1, 1, contract.LoanRepayment{Amount: 4000})
+	suite.Equal("some error", err.Error())
+	suite.mockLoanRepository.AssertExpectations(suite.T())
+	suite.mockLoanRepaymentRepository.AssertExpectations(suite.T())
+}
+
 func TestLoanTestSuite(t *testing.T) {
 	suite.Run(t, new(LoanTestSuite))
 }

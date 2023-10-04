@@ -40,11 +40,26 @@ func (mock *MockLoanRepository) UpdateStatus(ctx context.Context, id uint, statu
 	return args.Error(0)
 }
 
+func (mock *MockLoanRepository) GetByID(ctx context.Context, loanID uint) (model.Loan, error) {
+	args := mock.Called(ctx, loanID)
+	return args.Get(0).(model.Loan), args.Error(1)
+}
+
 type MockLoanRepaymentRepository struct {
 	mock.Mock
 }
 
 func (mock *MockLoanRepaymentRepository) Create(ctx context.Context, repayments []model.LoanRepayment) error {
 	args := mock.Called(ctx, repayments)
+	return args.Error(0)
+}
+
+func (mock *MockLoanRepaymentRepository) Update(ctx context.Context, id uint, data map[string]interface{}) error {
+	args := mock.Called(ctx, id, data)
+	return args.Error(0)
+}
+
+func (mock *MockLoanRepaymentRepository) BulkDelete(ctx context.Context, ids []uint) error {
+	args := mock.Called(ctx, ids)
 	return args.Error(0)
 }

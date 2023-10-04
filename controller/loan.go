@@ -87,6 +87,10 @@ func (loan Loan) Repay(w http.ResponseWriter, r *http.Request) {
 
 	err = loan.service.Repay(ctx, userID, uint(loanID), input)
 	if err != nil {
+		if errors.As(err, &contract.RepaymentError{}) {
+			render.Render(w, r, contract.ErrorRenderer(err))
+			return
+		}
 		render.Render(w, r, contract.ServerErrorRenderer(err))
 		return
 	}

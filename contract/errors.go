@@ -62,3 +62,15 @@ func ForbiddenErrorRenderer(err error) *ErrorResponse {
 		Message:    "you are forbidden to perform this action",
 	}
 }
+
+type RepaymentError struct {
+	Msg string
+}
+
+func (err RepaymentError) Error() string {
+	return err.Msg
+}
+
+func NewRepaymentError(msg string) RepaymentError {
+	return RepaymentError{Msg: msg}
+}

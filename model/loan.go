@@ -17,7 +17,7 @@ func (s Status) String() string {
 	case StatusApproved:
 		return "APPROVED"
 	case StatusPaid:
-		return "DELETED"
+		return "PAID"
 	}
 	return ""
 }
