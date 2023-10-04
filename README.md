@@ -38,7 +38,7 @@ The code can be easily run using docker-compose. Following are some steps:
 * Clone the code
 * `cd` into the directory and run
 
-  ```docker-compose up --build```
+  ```make run-server```
 
   The code will compile and auto migrate the database
 
@@ -48,8 +48,12 @@ The code can be easily run using docker-compose. Following are some steps:
 
     **Note**: For testing the authenticated APIs, you will need to pass `Bearer <token>` in the `Authorization` header field in swagger (i.e., type `Bearer` followed by the token in the input field)
 
-* Run tests by running
+* Run unit tests
+  ```make unit-tests```
 
-  ```go test ./...```
+  from the root directory.
+
+* Run integration tests
+  ```make integration-tests```
 
   from the root directory.
