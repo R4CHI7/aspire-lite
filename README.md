@@ -21,7 +21,7 @@ During the development of this system, certain assumptions were taken to help wi
 
 * There is no concept of interest on the loan taken by the user
 * If a user pays more than the required amount for a repayment, the amount for the remaining repayments gets updated based on the total pending amount for the loan.
-* If a user repays the entire loan in a (not last) repayment, the remaining repayments are deleted from the system.  
+* If a user repays the entire loan in a non-terminal repayment, the remaining repayments are deleted from the system.
 
 ### Hacks / Known Issues
 

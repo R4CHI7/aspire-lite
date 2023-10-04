@@ -31,6 +31,22 @@ func Init(username, password, database string) {
 	}
 }
 
+func InitWithHost(host, username, password, database string) {
+	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host, PORT, username, password, database)
+
+	var err error
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.AutoMigrate(&model.User{}, &model.Loan{}, &model.LoanRepayment{})
+	if err != nil {
+		panic(err)
+	}
+}
+
 func Get() *gorm.DB {
 	return db
 }

@@ -1,0 +1,29 @@
+version: "3.7"
+services:
+  testdb:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: aspire
+      POSTGRES_PASSWORD: aspire_pass
+      POSTGRES_DB: aspire_test
+      TOKEN_SECRET: some_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - testdata:/var/lib/postgresql/data
+  test:
+    build:
+      context: ..
+      dockerfile: e2e/Dockerfile
+    environment:
+      POSTGRES_USER: aspire
+      POSTGRES_PASSWORD: aspire_pass
+      POSTGRES_DB: aspire_test
+      TOKEN_SECRET: some_secret
+    depends_on:
+      - testdb
+    networks:
+      - default
+volumes:
+  testdata:
