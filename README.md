@@ -13,7 +13,7 @@ Following features have been built as part of this solution:
 
 A high level Entity Relation diagram looks like below:
 
-![image](docs/er-diagram.png)
+![ER Diagram](docs/er_diagram.png)
 
 ### Assumptions
 
