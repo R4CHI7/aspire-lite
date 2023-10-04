@@ -102,6 +102,14 @@ func (suite *IntegrationTestSuite) createLoan(token jwt.Token, amount float64, t
 	return resp["id"].(float64)
 }
 
+func (suite *IntegrationTestSuite) approveLoan(id float64) {
+	loanObj := model.Loan{ID: uint(id)}
+	res := suite.db.Model(&loanObj).Update("status", model.StatusApproved)
+
+	suite.Equal(1, int(res.RowsAffected))
+	suite.Nil(res.Error)
+}
+
 func (suite *IntegrationTestSuite) getToken(claims map[string]interface{}) jwt.Token {
 	tokenAuth := jwtauth.New("HS256", []byte(os.Getenv("TOKEN_SECRET")), nil)
 	token, _, err := tokenAuth.Encode(claims)

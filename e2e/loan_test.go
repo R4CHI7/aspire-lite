@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/go-chi/chi"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/r4chi7/aspire-lite/model"
 )
@@ -62,4 +64,52 @@ func (suite *IntegrationTestSuite) TestLoanGetHappyFlow() {
 	suite.Nil(err)
 	suite.Equal(loan1ID, resp[0]["id"])
 	suite.Equal(loan2ID, resp[1]["id"])
+}
+
+func (suite *IntegrationTestSuite) TestRepayHappyFlowEqualRepayments() {
+	userID := suite.createUser("loanrepay@example.com", "password", false)
+	token := suite.getToken(map[string]interface{}{"user_id": userID})
+	loanID := suite.createLoan(token, 10000.0, 2)
+	ctx := jwtauth.NewContext(context.Background(), token, nil)
+
+	suite.approveLoan(loanID)
+
+	// First repayment
+	req, err := http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":5000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", fmt.Sprintf("%d", int(loanID)))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(suite.loanController.Repay)
+
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusOK, rr.Code)
+
+	var loan model.Loan
+	suite.db.Preload("Repayments").Find(&loan, loanID)
+	suite.Equal(model.StatusPaid, loan.Repayments[1].Status)
+
+	// Second repayment
+	req, err = http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":5000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusOK, rr.Code)
+
+	suite.db.Preload("Repayments").Find(&loan, loanID)
+	suite.Equal(model.StatusPaid, loan.Status)
+	suite.Equal(model.StatusPaid, loan.Repayments[0].Status)
+	suite.Equal(model.StatusPaid, loan.Repayments[1].Status)
 }

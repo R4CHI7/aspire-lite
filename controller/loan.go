@@ -90,6 +90,7 @@ func (loan Loan) Repay(w http.ResponseWriter, r *http.Request) {
 	loanID, err := strconv.Atoi(loanIDs)
 	if err != nil {
 		render.Render(w, r, contract.ErrorRenderer(errors.New("invalid loan ID")))
+		return
 	}
 
 	input := contract.LoanRepayment{}
