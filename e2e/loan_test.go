@@ -226,3 +226,101 @@ func (suite *IntegrationTestSuite) TestRepayDeletesPendingPaymentIfUserPaysOffLo
 	suite.Equal(2, len(loan.Repayments))
 	suite.Equal(model.StatusPaid, loan.Status)
 }
+
+func (suite *IntegrationTestSuite) TestRepayShouldReturnBadRequestWhenLoanIsNotApproved() {
+	userID := suite.createUser("loanrepay3@example.com", "password", false)
+	token := suite.getToken(map[string]interface{}{"user_id": userID})
+	loanID := suite.createLoan(token, 10000.0, 3)
+	ctx := jwtauth.NewContext(context.Background(), token, nil)
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":4000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", fmt.Sprintf("%d", int(loanID)))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(suite.loanController.Repay)
+
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusBadRequest, rr.Code)
+	var resp map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &resp)
+	suite.Nil(err)
+	suite.Equal("loan is not approved", resp["message"])
+}
+
+func (suite *IntegrationTestSuite) TestRepayShouldReturnBadRequestWhenAmountIsLessThanRequired() {
+	userID := suite.createUser("loanrepay4@example.com", "password", false)
+	token := suite.getToken(map[string]interface{}{"user_id": userID})
+	loanID := suite.createLoan(token, 10000.0, 3)
+	ctx := jwtauth.NewContext(context.Background(), token, nil)
+	suite.approveLoan(loanID)
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":2000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", fmt.Sprintf("%d", int(loanID)))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(suite.loanController.Repay)
+
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusBadRequest, rr.Code)
+	var resp map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &resp)
+	suite.Nil(err)
+	suite.Equal("amount should be at least 3333.33", resp["message"])
+}
+
+func (suite *IntegrationTestSuite) TestRepayShouldReturnBadRequestWhenLastRepaymentAmountIsGreaterThanRequired() {
+	userID := suite.createUser("loanrepay5@example.com", "password", false)
+	token := suite.getToken(map[string]interface{}{"user_id": userID})
+	loanID := suite.createLoan(token, 10000.0, 2)
+	ctx := jwtauth.NewContext(context.Background(), token, nil)
+
+	suite.approveLoan(loanID)
+
+	// First repayment
+	req, err := http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":5000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("loanID", fmt.Sprintf("%d", int(loanID)))
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(suite.loanController.Repay)
+
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusOK, rr.Code)
+
+	// Second repayment
+	req, err = http.NewRequest("POST", fmt.Sprintf("/users/loans/%d/repay", uint(loanID)), bytes.NewBuffer([]byte(`{"amount":6000}`)))
+	suite.Nil(err)
+	req = req.WithContext(ctx)
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	suite.Equal(http.StatusBadRequest, rr.Code)
+	var resp map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &resp)
+	suite.Nil(err)
+	suite.Equal("amount should be 5000.00", resp["message"])
+}
