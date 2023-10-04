@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
 	"github.com/r4chi7/aspire-lite/contract"
 )
@@ -29,19 +28,13 @@ func (loan Loan) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	input := contract.Loan{}
 
-	_, claims, err := jwtauth.FromContext(ctx)
-	if err != nil {
-		render.Render(w, r, contract.ServerErrorRenderer(err))
-		return
-	}
-
 	if err := render.Bind(r, &input); err != nil {
 		log.Printf("unable to bind request body: %s", err.Error())
 		render.Render(w, r, contract.ErrorRenderer(err))
 		return
 	}
 
-	resp, err := loan.service.Create(ctx, uint(claims["user_id"].(float64)), input)
+	resp, err := loan.service.Create(ctx, getUserID(ctx), input)
 	if err != nil {
 		render.Render(w, r, contract.ServerErrorRenderer(err))
 		return
@@ -61,13 +54,8 @@ func (loan Loan) Create(w http.ResponseWriter, r *http.Request) {
 // @Router /users/loans [get]
 func (loan Loan) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	_, claims, err := jwtauth.FromContext(ctx)
-	if err != nil {
-		render.Render(w, r, contract.ServerErrorRenderer(err))
-		return
-	}
 
-	resp, err := loan.service.GetByUser(ctx, uint(claims["user_id"].(float64)))
+	resp, err := loan.service.GetByUser(ctx, getUserID(ctx))
 	if err != nil {
 		render.Render(w, r, contract.ServerErrorRenderer(err))
 		return

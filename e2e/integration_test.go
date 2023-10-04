@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/go-chi/jwtauth/v5"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/r4chi7/aspire-lite/controller"
 	"github.com/r4chi7/aspire-lite/database"
 	"github.com/r4chi7/aspire-lite/model"
@@ -41,7 +44,7 @@ func TestIntegrationTestSuite(t *testing.T) {
 
 // Some helper methods
 
-func (suite *IntegrationTestSuite) createUser(email, password string, isAdmin bool) {
+func (suite *IntegrationTestSuite) createUser(email, password string, isAdmin bool) float64 {
 	input := map[string]interface{}{
 		"email":    email,
 		"password": password,
@@ -65,6 +68,17 @@ func (suite *IntegrationTestSuite) createUser(email, password string, isAdmin bo
 	suite.Nil(err)
 	suite.NotEmpty(resp["token"])
 	var insertedUser model.User
-	suite.db.Where("email = ?", "test@example.com").Find(&insertedUser)
+	suite.db.Where("email = ?", email).Find(&insertedUser)
 	suite.NotZero(insertedUser.ID)
+
+	return resp["id"].(float64)
+}
+
+func (suite *IntegrationTestSuite) getToken(claims map[string]interface{}) jwt.Token {
+	tokenAuth := jwtauth.New("HS256", []byte(os.Getenv("TOKEN_SECRET")), nil)
+	token, _, err := tokenAuth.Encode(claims)
+	if err != nil {
+		panic(err)
+	}
+	return token
 }
