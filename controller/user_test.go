@@ -62,6 +62,27 @@ func (suite *UserTestSuite) TestCreateShouldReturnBadRequestWhenRequestBodyIsInc
 	suite.mockService.AssertNotCalled(suite.T(), "Created")
 }
 
+func (suite *UserTestSuite) TestCreateShouldReturnBadRequestWhenEmailAlreadyExists() {
+	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"email":"test@example.xyz","password":"password"}`))
+	req.Header.Add("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	suite.mockService.On("Create", req.Context(), contract.User{Email: "test@example.xyz", Password: "password"}).
+		Return(contract.UserResponse{}, errors.New(`duplicate key value violates unique constraint "idx_users_email"`))
+
+	suite.controller.Create(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		suite.Error(errors.New("expected error to be nil got"), err)
+	}
+	suite.Equal(http.StatusBadRequest, res.StatusCode)
+	suite.Equal(`{"status_text":"bad request","message":"email already exists"}
+`, string(body)) // This newline is needed because chi returns the response ending with a \n
+	suite.mockService.AssertExpectations(suite.T())
+}
+
 func (suite *UserTestSuite) TestCreateShouldReturnServerErrorWhenServiceReturnsError() {
 	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"email":"test@example.xyz","password":"password"}`))
 	req.Header.Add("Content-Type", "application/json")

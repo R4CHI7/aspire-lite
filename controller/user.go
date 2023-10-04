@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/render"
 	"github.com/r4chi7/aspire-lite/contract"
@@ -35,6 +36,10 @@ func (user User) Create(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := user.service.Create(ctx, input)
 	if err != nil {
+		if strings.Contains(err.Error(), "unique constraint") {
+			render.Render(w, r, contract.ErrorRenderer(errors.New("email already exists")))
+			return
+		}
 		render.Render(w, r, contract.ServerErrorRenderer(err))
 		return
 	}

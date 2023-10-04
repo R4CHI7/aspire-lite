@@ -31,6 +31,26 @@ func (suite *IntegrationTestSuite) TestUserCreate() {
 	suite.NotZero(insertedUser.ID)
 }
 
+func (suite *IntegrationTestSuite) TestUserCreateShouldReturnBadRequestWhenEmailAlreadyExists() {
+	suite.createUser("login20@example.com", "test@123", false)
+	req, err := http.NewRequest("POST", "/users", bytes.NewBuffer([]byte(`{"email":"login20@example.com","password":"test@123"}`)))
+	suite.Nil(err)
+
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(suite.userController.Create)
+
+	handler.ServeHTTP(rr, req)
+
+	suite.Equal(http.StatusBadRequest, rr.Code)
+
+	var resp map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &resp)
+	suite.Nil(err)
+	suite.Equal("email already exists", resp["message"])
+}
+
 func (suite *IntegrationTestSuite) TestUserLoginHappyFlow() {
 	suite.createUser("login@example.com", "test@123", false)
 	req, err := http.NewRequest("POST", "/users/login", bytes.NewBuffer([]byte(`{"email":"login@example.com","password":"test@123"}`)))

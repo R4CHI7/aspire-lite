@@ -66,7 +66,7 @@ func (suite *IntegrationTestSuite) TestLoanGetHappyFlow() {
 	suite.Equal(loan2ID, resp[1]["id"])
 }
 
-func (suite *IntegrationTestSuite) TestRepayHappyFlowEqualRepayments() {
+func (suite *IntegrationTestSuite) TestLoanRepayHappyFlowEqualRepayments() {
 	userID := suite.createUser("loanrepay@example.com", "password", false)
 	token := suite.getToken(map[string]interface{}{"user_id": userID})
 	loanID := suite.createLoan(token, 10000.0, 2)
@@ -114,7 +114,7 @@ func (suite *IntegrationTestSuite) TestRepayHappyFlowEqualRepayments() {
 	suite.Equal(model.StatusPaid, loan.Repayments[1].Status)
 }
 
-func (suite *IntegrationTestSuite) TestRepayHappyFlowUnEqualRepayments() {
+func (suite *IntegrationTestSuite) TestLoanRepayHappyFlowUnEqualRepayments() {
 	userID := suite.createUser("loanrepay1@example.com", "password", false)
 	token := suite.getToken(map[string]interface{}{"user_id": userID})
 	loanID := suite.createLoan(token, 10000.0, 2)
@@ -170,7 +170,7 @@ func (suite *IntegrationTestSuite) TestRepayHappyFlowUnEqualRepayments() {
 	suite.Equal(model.StatusPaid, loan.Repayments[1].Status)
 }
 
-func (suite *IntegrationTestSuite) TestRepayDeletesPendingPaymentIfUserPaysOffLoanPrematurely() {
+func (suite *IntegrationTestSuite) TestLoanRepayDeletesPendingPaymentIfUserPaysOffLoanPrematurely() {
 	userID := suite.createUser("loanrepay2@example.com", "password", false)
 	token := suite.getToken(map[string]interface{}{"user_id": userID})
 	loanID := suite.createLoan(token, 10000.0, 3)
@@ -227,7 +227,7 @@ func (suite *IntegrationTestSuite) TestRepayDeletesPendingPaymentIfUserPaysOffLo
 	suite.Equal(model.StatusPaid, loan.Status)
 }
 
-func (suite *IntegrationTestSuite) TestRepayShouldReturnBadRequestWhenLoanIsNotApproved() {
+func (suite *IntegrationTestSuite) TestLoanRepayShouldReturnBadRequestWhenLoanIsNotApproved() {
 	userID := suite.createUser("loanrepay3@example.com", "password", false)
 	token := suite.getToken(map[string]interface{}{"user_id": userID})
 	loanID := suite.createLoan(token, 10000.0, 3)
@@ -254,7 +254,7 @@ func (suite *IntegrationTestSuite) TestRepayShouldReturnBadRequestWhenLoanIsNotA
 	suite.Equal("loan is not approved", resp["message"])
 }
 
-func (suite *IntegrationTestSuite) TestRepayShouldReturnBadRequestWhenAmountIsLessThanRequired() {
+func (suite *IntegrationTestSuite) TestLoanRepayShouldReturnBadRequestWhenAmountIsLessThanRequired() {
 	userID := suite.createUser("loanrepay4@example.com", "password", false)
 	token := suite.getToken(map[string]interface{}{"user_id": userID})
 	loanID := suite.createLoan(token, 10000.0, 3)
@@ -282,7 +282,7 @@ func (suite *IntegrationTestSuite) TestRepayShouldReturnBadRequestWhenAmountIsLe
 	suite.Equal("amount should be at least 3333.33", resp["message"])
 }
 
-func (suite *IntegrationTestSuite) TestRepayShouldReturnBadRequestWhenLastRepaymentAmountIsGreaterThanRequired() {
+func (suite *IntegrationTestSuite) TestLoanRepayShouldReturnBadRequestWhenLastRepaymentAmountIsGreaterThanRequired() {
 	userID := suite.createUser("loanrepay5@example.com", "password", false)
 	token := suite.getToken(map[string]interface{}{"user_id": userID})
 	loanID := suite.createLoan(token, 10000.0, 2)
