@@ -46,6 +46,8 @@ The code can be easily run using docker-compose. Following are some steps:
 
 * Once the code is up and running, visit [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html) to view the swagger docs and accessing the different APIs.
 
+    **Note**: For testing the authenticated APIs, you will need to pass `Bearer <token>` in the `Authorization` header field in swagger (i.e., type `Bearer` followed by the token in the input field)
+
 * Run tests by running
 
   ```go test ./...```

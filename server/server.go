@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/r4chi7/aspire-lite/controller"
 	"github.com/r4chi7/aspire-lite/database"
@@ -28,6 +29,7 @@ func Init() *chi.Mux {
 	loanController := controller.NewLoan(service.NewLoan(loanRepository, loanRepaymentRepository))
 	adminController := controller.NewAdmin(service.NewLoan(loanRepository, loanRepaymentRepository))
 
+	r.Mount("/swagger", httpSwagger.WrapHandler)
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", userController.Create)
 		r.Post("/login", userController.Login)

@@ -16,6 +16,14 @@ type Admin struct {
 	service LoanService
 }
 
+// UpdateLoanStatus - update a loan's status
+// @Summary This API updates a loan's status. This API can only be invoked by an admin user.
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param event body contract.LoanStatusUpdate true "Add user"
+// @Param Authorization header string true "Bearer"
+// @Router /admin/loan/status [post]
 func (admin Admin) UpdateLoanStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

@@ -16,6 +16,15 @@ type Loan struct {
 	service LoanService
 }
 
+// Create - Creates a new loan
+// @Summary This API creates a new loan for the authenticated user
+// @Tags loan
+// @Accept json
+// @Produce json
+// @Param event body contract.Loan true "Add loan"
+// @Param Authorization header string true "Bearer"
+// @Success 200 {object} contract.LoanResponse
+// @Router /users/loans [post]
 func (loan Loan) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	input := contract.Loan{}
@@ -42,6 +51,14 @@ func (loan Loan) Create(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, resp)
 }
 
+// Create - Gets all loans
+// @Summary This API returns all loans for the authenticated user
+// @Tags loan
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer"
+// @Success 200 {object} []contract.LoanResponse
+// @Router /users/loans [get]
 func (loan Loan) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	_, claims, err := jwtauth.FromContext(ctx)
@@ -60,6 +77,15 @@ func (loan Loan) Get(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, resp)
 }
 
+// Create - Repays a loan
+// @Summary This API performs a repayment for the loan
+// @Tags loan
+// @Accept json
+// @Produce json
+// @Param event body contract.LoanRepayment true "Add loan"
+// @Param Authorization header string true "Bearer"
+// @Param loan_id path int true "loan id"
+// @Router /users/loans/{loan_id}/repay [post]
 func (loan Loan) Repay(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID := getUserID(ctx)

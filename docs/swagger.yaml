@@ -1,0 +1,226 @@
+basePath: /
+definitions:
+  contract.Loan:
+    properties:
+      amount:
+        type: number
+      term:
+        type: integer
+    type: object
+  contract.LoanRepayment:
+    properties:
+      amount:
+        type: number
+    type: object
+  contract.LoanRepaymentResponse:
+    properties:
+      amount:
+        type: number
+      due_date:
+        type: string
+      status:
+        type: string
+    type: object
+  contract.LoanResponse:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: integer
+      repayments:
+        items:
+          $ref: '#/definitions/contract.LoanRepaymentResponse'
+        type: array
+      status:
+        type: string
+      term:
+        type: integer
+    type: object
+  contract.LoanStatusUpdate:
+    properties:
+      loan_id:
+        type: integer
+      status:
+        $ref: '#/definitions/model.Status'
+    type: object
+  contract.User:
+    properties:
+      email:
+        type: string
+      is_admin:
+        type: boolean
+      password:
+        type: string
+    type: object
+  contract.UserLogin:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  contract.UserResponse:
+    properties:
+      id:
+        type: integer
+      token:
+        type: string
+    type: object
+  model.Status:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - StatusPending
+    - StatusApproved
+    - StatusPaid
+info:
+  contact: {}
+  description: Aspire Lite Backend APIs
+  title: Aspire Lite Backend APIs
+  version: "1.0"
+paths:
+  /admin/loan/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Add user
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/contract.LoanStatusUpdate'
+      - description: Bearer
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: This API updates a loan's status. This API can only be invoked by an
+        admin user.
+      tags:
+      - admin
+  /users:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Add user
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/contract.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contract.UserResponse'
+      summary: This API creates a new user
+      tags:
+      - user
+  /users/loans:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bearer
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/contract.LoanResponse'
+            type: array
+      summary: This API returns all loans for the authenticated user
+      tags:
+      - loan
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Add loan
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/contract.Loan'
+      - description: Bearer
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contract.LoanResponse'
+      summary: This API creates a new loan for the authenticated user
+      tags:
+      - loan
+  /users/loans/{loan_id}/repay:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Add loan
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/contract.LoanRepayment'
+      - description: Bearer
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: loan id
+        in: path
+        name: loan_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: This API performs a repayment for the loan
+      tags:
+      - loan
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login user
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/contract.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contract.UserResponse'
+      summary: This API logs in a user with given username and password
+      tags:
+      - user
+swagger: "2.0"
